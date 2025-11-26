@@ -347,6 +347,12 @@ impl TryFrom<ClientConfig> for Client {
         }
 
         let default_token_expiration_secs = config.default_token_expiration_secs;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(retry_policy) = config.retry_policy {
+            client_builder.retry(retry_policy);
+        }
+
         Ok(Self {
             config: Arc::new(config),
             tokens: TokenCache::new(default_token_expiration_secs),
@@ -2012,6 +2018,12 @@ pub struct ClientConfig {
     ///
     /// This defaults to `None`.
     pub no_proxy: Option<String>,
+
+    /// Set the retry policy used by the client.
+    /// `None` means using `reqwest`'s default retry policy.
+    ///
+    /// This defaults to `None`.
+    pub retry_policy: Option<reqwest::retry::Builder>,
 }
 
 impl Default for ClientConfig {
@@ -2033,6 +2045,7 @@ impl Default for ClientConfig {
             https_proxy: None,
             http_proxy: None,
             no_proxy: None,
+            retry_policy: None,
         }
     }
 }
